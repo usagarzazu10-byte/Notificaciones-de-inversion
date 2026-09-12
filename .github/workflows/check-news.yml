@@ -6,10 +6,6 @@ on:
     - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
-permissions:
-  contents: read
-  issues: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -28,17 +24,8 @@ jobs:
         working-directory: backend
         run: npm install
 
-      - name: Diagnostico - listar tablas visibles por la API
-        working-directory: backend
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node list_tables.mjs > /tmp/diag.log 2>&1 || true
-
       - name: Ejecutar revision de noticias
-        id: run_check
         working-directory: backend
-        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -46,19 +33,4 @@ jobs:
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
-        run: npm run check > /tmp/run_output.log 2>&1
-
-      - name: Combinar logs de diagnostico
-        if: always()
-        run: cat /tmp/diag.log /tmp/run_output.log > /tmp/combined.log 2>/dev/null || cp /tmp/diag.log /tmp/combined.log
-
-      - name: Reportar como issue (temporal, para depurar)
-        if: always()
-        working-directory: backend
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node report_issue.mjs "${{ github.repository_owner }}" "${{ github.event.repository.name }}" "$GH_TOKEN" "debug run ${{ github.run_id }}" /tmp/combined.log
-
-      - name: Fallar el job si el script fallo
-        if: steps.run_check.outcome == 'failure'
-        run: exit 1
+        run: npm run check
