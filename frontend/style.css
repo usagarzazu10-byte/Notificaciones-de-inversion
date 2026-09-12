@@ -178,6 +178,7 @@ main {
   justify-content: flex-end;
   z-index: 30;
 }
+.overlay[hidden] { display: none; }
 
 .settings-panel {
   width: min(400px, 100%);
