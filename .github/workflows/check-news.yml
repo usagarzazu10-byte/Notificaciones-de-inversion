@@ -28,6 +28,25 @@ jobs:
         working-directory: backend
         run: npm install
 
+      - name: Diagnóstico: listar tablas visibles por la API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -s "$SUPABASE_URL/rest/v1/" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" > /tmp/openapi.json
+          echo "=== Tablas/rutas visibles por PostgREST ===" > /tmp/diag.log
+          python3 -c "
+import json
+with open('/tmp/openapi.json') as f:
+    data = json.load(f)
+paths = list(data.get('paths', {}).keys())
+print('Tablas/rutas visibles:', paths)
+" >> /tmp/diag.log
+          echo "=== SUPABASE_URL usada ===" >> /tmp/diag.log
+          echo "$SUPABASE_URL" >> /tmp/diag.log
+
       - name: Ejecutar revisión de noticias
         id: run_check
         working-directory: backend
@@ -42,14 +61,15 @@ jobs:
         run: npm run check > /tmp/run_output.log 2>&1
 
       - name: Reportar fallo como issue (temporal, para depurar)
-        if: steps.run_check.outcome == 'failure'
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BODY=$(cat /tmp/run_output.log | tail -c 60000 | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+          cat /tmp/diag.log /tmp/run_output.log > /tmp/combined.log 2>/dev/null || cat /tmp/diag.log > /tmp/combined.log
+          BODY=$(cat /tmp/combined.log | tail -c 60000 | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
           curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/issues \
-            -d "{\"title\":\"[debug] fallo v2 $(date -u +%FT%TZ)\",\"body\":$BODY}"
+            -d "{\"title\":\"[debug] fallo v3 $(date -u +%FT%TZ)\",\"body\":$BODY}"
 
       - name: Fallar el job si el script falló
         if: steps.run_check.outcome == 'failure'
