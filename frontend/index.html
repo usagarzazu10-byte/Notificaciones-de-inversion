@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Señal — Notificaciones de inversión</title>
+<meta name="description" content="Noticias de las empresas que sigues, filtradas por importancia." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#0F1115" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Señal</span>
+  </div>
+  <div class="topbar-actions">
+    <span id="last-check" class="last-check"></span>
+    <button id="btn-settings" class="icon-btn" aria-label="Ajustes" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="12" r="3.2"/>
+        <path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V19.9a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H4.1a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H10.2a1.7 1.7 0 0 0 1-1.55V4.1a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.11a1.7 1.7 0 0 0 1.55 1H19.9a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="filter-row">
+    <button class="chip is-active" data-filter="all">Todas</button>
+    <button class="chip" data-filter="high">Importantes</button>
+    <label class="switch">
+      <input type="checkbox" id="only-important-toggle" />
+      <span>Solo avisarme de las importantes</span>
+    </label>
+  </div>
+
+  <ul id="feed" class="feed" aria-live="polite"></ul>
+
+  <p id="empty-state" class="empty-state" hidden>
+    Todavía no hay noticias registradas. En cuanto el revisor automático encuentre algo
+    sobre tus empresas seguidas, aparecerá aquí.
+  </p>
+</main>
+
+<!-- Panel de ajustes -->
+<div id="settings-overlay" class="overlay" hidden>
+  <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <h2 id="settings-title">Ajustes</h2>
+      <button id="btn-close-settings" class="icon-btn" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </button>
+    </div>
+
+    <section class="settings-section">
+      <h3>Notificaciones push</h3>
+      <p class="hint">Actívalas para recibir un aviso en el móvil en cuanto haya algo importante.</p>
+      <button id="btn-enable-push" class="btn-primary">Activar notificaciones</button>
+      <p id="push-status" class="hint"></p>
+    </section>
+
+    <section class="settings-section">
+      <h3>Empresas seguidas</h3>
+      <ul id="company-list" class="company-list"></ul>
+      <form id="add-company-form" class="add-company-form">
+        <input id="new-company-name" type="text" placeholder="Nombre (ej. Amazon)" required />
+        <input id="new-company-ticker" type="text" placeholder="Ticker (opcional)" />
+        <button type="submit" class="btn-secondary">Añadir</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
