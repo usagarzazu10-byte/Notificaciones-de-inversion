@@ -325,7 +325,8 @@ btnEnablePush.addEventListener("click", async () => {
 async function init() {
   if ("serviceWorker" in navigator) {
     try {
-      await navigator.serviceWorker.register("sw.js");
+      const reg = await navigator.serviceWorker.register("sw.js");
+      reg.update(); // fuerza a comprobar si hay una versión nueva del service worker
     } catch (err) {
       console.error("Error registrando service worker:", err);
     }
