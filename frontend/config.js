@@ -5,7 +5,7 @@
 // diseñadas para ser públicas, no son secretas.
 // ============================================================
 window.INVNOTIF_CONFIG = {
-  SUPABASE_URL: "https://TU-PROYECTO.supabase.co",
-  SUPABASE_ANON_KEY: "TU-ANON-KEY-AQUI",
+  SUPABASE_URL: "https://krjikgdtsokotdjerzxp.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_5F2EvsCwjOVadWc4hU6SnQ_96KU7iw5",
   VAPID_PUBLIC_KEY: "BCYoslemZfH1z73Ciy1UH7inM20FDp-e6s0tanWbr6E4I9_OYu_By_FGorSQdzm9c4pt2KiIwp6geTLZwzk6BsA",
 };
