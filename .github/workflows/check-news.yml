@@ -6,10 +6,6 @@ on:
     - cron: "*/30 * * * *"
   workflow_dispatch: {} # permite lanzarlo manualmente desde la pestaña Actions
 
-permissions:
-  contents: read
-  issues: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -20,7 +16,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: backend/package-lock.json
 
@@ -29,9 +25,7 @@ jobs:
         run: npm install
 
       - name: Ejecutar revisión de noticias
-        id: run_check
         working-directory: backend
-        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -39,24 +33,4 @@ jobs:
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
-        run: npm run check > /tmp/run_output.log 2>&1
-
-      - name: Mostrar salida
-        if: always()
-        run: cat /tmp/run_output.log
-
-      # Paso de diagnóstico temporal: si falla, publica el log como issue
-      # para poder revisarlo (se puede borrar este paso más adelante).
-      - name: Reportar fallo como issue (temporal, para depurar)
-        if: steps.run_check.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BODY=$(cat /tmp/run_output.log | tail -c 60000 | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
-          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/issues \
-            -d "{\"title\":\"[debug] fallo en revisión de noticias $(date -u +%FT%TZ)\",\"body\":$BODY}"
-
-      - name: Fallar el job si el script falló
-        if: steps.run_check.outcome == 'failure'
-        run: exit 1
+        run: npm run check
