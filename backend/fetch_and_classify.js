@@ -171,8 +171,15 @@ async function main() {
   let totalNew = 0;
 
   for (const company of companies || []) {
-    const items = await fetchNewsForCompany(company);
+    let items = [];
+    try {
+      items = await fetchNewsForCompany(company);
+    } catch (err) {
+      console.error(`Fallo general leyendo ${company.name}:`, err.message);
+      continue;
+    }
     for (const item of items) {
+      try {
       const title = item.title || "";
       const url = item.link || "";
       if (!title || !url) continue;
@@ -189,7 +196,15 @@ async function main() {
 
       const summary = (item.contentSnippet || "").slice(0, 500);
       const result = await classify(title, summary);
-      const sourceName = item.creator || (item.source && item.source.title) || new URL(url).hostname;
+
+      let sourceName = item.creator || (item.source && item.source.title);
+      if (!sourceName) {
+        try {
+          sourceName = new URL(url).hostname;
+        } catch {
+          sourceName = "Fuente desconocida";
+        }
+      }
 
       const { error: insertErr } = await supabase.from("notifications").insert({
         company_id: company.id,
@@ -218,6 +233,9 @@ async function main() {
           url,
         });
       }
+      } catch (itemErr) {
+        console.error(`Fallo procesando un artículo de ${company.name}:`, itemErr.message);
+      }
     }
   }
 
@@ -226,4 +244,7 @@ async function main() {
   console.log(`Comprobación completa. ${totalNew} noticias nuevas guardadas.`);
 }
 
-main();
+main().catch((err) => {
+  console.error("Fallo fatal en la ejecución:", err.stack || err.message);
+  process.exit(1);
+});
