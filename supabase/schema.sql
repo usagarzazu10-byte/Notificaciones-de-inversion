@@ -77,5 +77,6 @@ create policy "public read settings" on settings for select using (true);
 create policy "public insert companies" on companies for insert with check (true);
 create policy "public update companies" on companies for update using (true);
 create policy "public delete companies" on companies for delete using (true);
+create policy "public update notifications" on notifications for update using (true);
 create policy "public insert push_subscriptions" on push_subscriptions for insert with check (true);
 create policy "public update settings" on settings for update using (true);

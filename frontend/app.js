@@ -10,6 +10,16 @@ let currentFilter = "all";
 let allNotifications = [];
 let companiesById = {};
 
+// ---------------- Toasts (confirmaciones visibles) ----------------
+function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast is-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
 // ---------------- Utilidades ----------------
 function timeAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -50,10 +60,41 @@ function renderFeed() {
         <span>·</span>
         <span>${timeAgo(n.published_at)}</span>
         ${n.importance === "high" ? '<span class="importance-tag">· Importante</span>' : ""}
+        <label class="importance-toggle" title="Marcar manualmente como importante">
+          <input type="checkbox" data-id="${n.id}" ${n.importance === "high" ? "checked" : ""} />
+          Importante
+        </label>
       </div>
       <div class="feed-item-title">${n.title}</div>
       <div class="feed-item-source">${n.source_name || ""}</div>
     `;
+
+    // El checkbox no debe seguir el enlace de la noticia
+    const checkbox = a.querySelector(".importance-toggle input");
+    checkbox.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Alternamos manualmente el estado ya que se evita el comportamiento por defecto
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event("change"));
+    });
+    checkbox.addEventListener("change", async (e) => {
+      e.preventDefault();
+      const newImportance = checkbox.checked ? "high" : "low";
+      const { error } = await supabase
+        .from("notifications")
+        .update({ importance: newImportance, importance_reason: "Marcado manualmente por el usuario" })
+        .eq("id", n.id);
+      if (error) {
+        showToast("No se pudo actualizar: " + error.message, "error");
+        checkbox.checked = !checkbox.checked;
+        return;
+      }
+      n.importance = newImportance;
+      showToast(newImportance === "high" ? "Marcada como importante" : "Marcada como no importante", "success");
+      renderFeed();
+    });
+
     li.appendChild(a);
     feedEl.appendChild(li);
   }
@@ -130,7 +171,13 @@ async function loadCompanies() {
   }
   listEl.querySelectorAll(".remove-company").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      await supabase.from("companies").delete().eq("id", btn.dataset.id);
+      const label = btn.closest("li").querySelector("span").textContent;
+      const { error } = await supabase.from("companies").delete().eq("id", btn.dataset.id);
+      if (error) {
+        showToast("No se pudo quitar: " + error.message, "error");
+        return;
+      }
+      showToast(`${label} quitada de tu lista`, "success");
       await loadCompanies();
     });
   });
@@ -150,12 +197,84 @@ document.getElementById("add-company-form").addEventListener("submit", async (e)
   const searchTerms = ticker ? `${name}|${ticker}` : name;
   const { error } = await supabase.from("companies").insert({ name, ticker: ticker || null, search_terms: searchTerms });
   if (error) {
-    alert("No se pudo añadir la empresa: " + error.message);
+    showToast("No se pudo añadir la empresa: " + error.message, "error");
     return;
   }
+  showToast(`${name} añadida a tu lista`, "success");
   nameInput.value = "";
   tickerInput.value = "";
   await loadCompanies();
+});
+
+// ---------------- Buscador de empresas con sugerencias ----------------
+const searchInput = document.getElementById("new-company-name");
+const tickerHidden = document.getElementById("new-company-ticker");
+const suggestionsEl = document.getElementById("company-suggestions");
+let highlightedIndex = -1;
+
+function renderSuggestions(matches) {
+  suggestionsEl.innerHTML = "";
+  highlightedIndex = -1;
+  if (matches.length === 0) {
+    suggestionsEl.hidden = true;
+    return;
+  }
+  matches.forEach((m) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${m.name}</span><span class="ticker">${m.ticker}</span>`;
+    li.addEventListener("mousedown", (e) => {
+      // mousedown en vez de click para que dispare antes del blur del input
+      e.preventDefault();
+      selectSuggestion(m);
+    });
+    suggestionsEl.appendChild(li);
+  });
+  suggestionsEl.hidden = false;
+}
+
+function selectSuggestion(m) {
+  searchInput.value = m.name;
+  tickerHidden.value = m.ticker;
+  suggestionsEl.hidden = true;
+}
+
+searchInput.addEventListener("input", () => {
+  tickerHidden.value = ""; // si escribe libremente, ya no hay ticker asociado
+  const q = searchInput.value.trim().toLowerCase();
+  if (q.length < 1) {
+    suggestionsEl.hidden = true;
+    return;
+  }
+  const list = window.KNOWN_COMPANIES || [];
+  const matches = list
+    .filter((c) => c.name.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q))
+    .slice(0, 8);
+  renderSuggestions(matches);
+});
+
+searchInput.addEventListener("keydown", (e) => {
+  const items = [...suggestionsEl.querySelectorAll("li")];
+  if (suggestionsEl.hidden || items.length === 0) return;
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    highlightedIndex = (highlightedIndex + 1) % items.length;
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+  } else if (e.key === "Enter" && highlightedIndex >= 0) {
+    e.preventDefault();
+    items[highlightedIndex].dispatchEvent(new Event("mousedown"));
+    return;
+  } else {
+    return;
+  }
+  items.forEach((li, i) => li.classList.toggle("is-highlighted", i === highlightedIndex));
+});
+
+document.addEventListener("click", (e) => {
+  if (!suggestionsEl.contains(e.target) && e.target !== searchInput) {
+    suggestionsEl.hidden = true;
+  }
 });
 
 // ---------------- Notificaciones push ----------------
@@ -178,6 +297,7 @@ btnEnablePush.addEventListener("click", async () => {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       pushStatusEl.textContent = "Permiso denegado. Actívalo desde los ajustes del navegador.";
+      showToast("Permiso de notificaciones denegado", "error");
       return;
     }
     const reg = await navigator.serviceWorker.ready;
@@ -193,9 +313,11 @@ btnEnablePush.addEventListener("click", async () => {
     });
     if (error && !error.message.includes("duplicate")) throw error;
     pushStatusEl.textContent = "¡Notificaciones activadas en este dispositivo!";
+    showToast("Notificaciones push activadas", "success");
   } catch (err) {
     console.error(err);
     pushStatusEl.textContent = "No se pudo activar: " + err.message;
+    showToast("No se pudo activar el push: " + err.message, "error");
   }
 });
 

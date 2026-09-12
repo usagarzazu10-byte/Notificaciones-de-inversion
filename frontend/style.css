@@ -246,22 +246,100 @@ main {
 }
 .remove-company:hover { color: var(--gold); }
 
+.company-search-wrap { position: relative; flex: 1; min-width: 140px; }
+
 .add-company-form {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.7rem;
   flex-wrap: wrap;
+  align-items: flex-start;
 }
-.add-company-form input {
+
+.add-company-form input[type="text"] {
   background: var(--bg);
   border: 1px solid var(--line);
   color: var(--text);
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
   font-size: 0.85rem;
-  flex: 1;
-  min-width: 100px;
+  width: 100%;
 }
+
+.company-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.company-suggestions li {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.company-suggestions li:hover,
+.company-suggestions li.is-highlighted { background: rgba(255,255,255,0.06); }
+.company-suggestions .ticker { color: var(--text-dim); font-size: 0.78rem; }
+
+/* ---------- Toasts ---------- */
+.toast-container {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  width: min(420px, calc(100% - 2rem));
+}
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  animation: toast-in 0.18s ease-out;
+  border-left: 3px solid var(--teal);
+}
+.toast.is-error { border-left-color: #b5533f; }
+.toast.is-success { border-left-color: var(--gold); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Checkbox de importancia manual en el feed ---------- */
+.importance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.importance-toggle input { accent-color: var(--gold); }
 
 @media (max-width: 480px) {
   .switch { margin-left: 0; }

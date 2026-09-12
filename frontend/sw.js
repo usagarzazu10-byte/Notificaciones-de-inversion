@@ -1,5 +1,5 @@
 const CACHE_NAME = "invnotif-v1";
-const CORE_ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./config.js", "./manifest.json", "./icon.svg"];
+const CORE_ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./config.js", "./companies-data.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

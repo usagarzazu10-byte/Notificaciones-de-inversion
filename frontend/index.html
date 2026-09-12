@@ -71,17 +71,23 @@
     <section class="settings-section">
       <h3>Empresas seguidas</h3>
       <ul id="company-list" class="company-list"></ul>
-      <form id="add-company-form" class="add-company-form">
-        <input id="new-company-name" type="text" placeholder="Nombre (ej. Amazon)" required />
-        <input id="new-company-ticker" type="text" placeholder="Ticker (opcional)" />
+      <form id="add-company-form" class="add-company-form" autocomplete="off">
+        <div class="company-search-wrap">
+          <input id="new-company-name" type="text" placeholder="Busca una empresa (ej. Amazon, AAPL...)" required />
+          <ul id="company-suggestions" class="company-suggestions" hidden></ul>
+        </div>
+        <input id="new-company-ticker" type="hidden" />
         <button type="submit" class="btn-secondary">Añadir</button>
       </form>
     </section>
   </div>
 </div>
 
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
+<script src="companies-data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
