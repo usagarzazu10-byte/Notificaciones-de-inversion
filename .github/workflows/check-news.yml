@@ -1,10 +1,10 @@
-name: Revisar noticias de inversión
+name: Revisar noticias de inversion
 
 on:
   schedule:
-    # Cada 30 minutos. Ajusta esta expresión cron si quieres otra frecuencia.
+    # Cada 30 minutos. Ajusta esta expresion cron si quieres otra frecuencia.
     - cron: "*/30 * * * *"
-  workflow_dispatch: {} # permite lanzarlo manualmente desde la pestaña Actions
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -28,26 +28,14 @@ jobs:
         working-directory: backend
         run: npm install
 
-      - name: Diagnóstico: listar tablas visibles por la API
+      - name: Diagnostico - listar tablas visibles por la API
+        working-directory: backend
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          curl -s "$SUPABASE_URL/rest/v1/" \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" > /tmp/openapi.json
-          echo "=== Tablas/rutas visibles por PostgREST ===" > /tmp/diag.log
-          python3 -c "
-import json
-with open('/tmp/openapi.json') as f:
-    data = json.load(f)
-paths = list(data.get('paths', {}).keys())
-print('Tablas/rutas visibles:', paths)
-" >> /tmp/diag.log
-          echo "=== SUPABASE_URL usada ===" >> /tmp/diag.log
-          echo "$SUPABASE_URL" >> /tmp/diag.log
+        run: node list_tables.mjs > /tmp/diag.log 2>&1 || true
 
-      - name: Ejecutar revisión de noticias
+      - name: Ejecutar revision de noticias
         id: run_check
         working-directory: backend
         continue-on-error: true
@@ -60,17 +48,17 @@ print('Tablas/rutas visibles:', paths)
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
         run: npm run check > /tmp/run_output.log 2>&1
 
-      - name: Reportar fallo como issue (temporal, para depurar)
+      - name: Combinar logs de diagnostico
         if: always()
+        run: cat /tmp/diag.log /tmp/run_output.log > /tmp/combined.log 2>/dev/null || cp /tmp/diag.log /tmp/combined.log
+
+      - name: Reportar como issue (temporal, para depurar)
+        if: always()
+        working-directory: backend
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cat /tmp/diag.log /tmp/run_output.log > /tmp/combined.log 2>/dev/null || cat /tmp/diag.log > /tmp/combined.log
-          BODY=$(cat /tmp/combined.log | tail -c 60000 | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
-          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/issues \
-            -d "{\"title\":\"[debug] fallo v3 $(date -u +%FT%TZ)\",\"body\":$BODY}"
+        run: node report_issue.mjs "${{ github.repository_owner }}" "${{ github.event.repository.name }}" "$GH_TOKEN" "debug run ${{ github.run_id }}" /tmp/combined.log
 
-      - name: Fallar el job si el script falló
+      - name: Fallar el job si el script fallo
         if: steps.run_check.outcome == 'failure'
         run: exit 1
