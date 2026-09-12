@@ -1,5 +1,11 @@
 const cfg = window.INVNOTIF_CONFIG;
-const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+let supabase = null;
+try {
+  if (!window.supabase) throw new Error("La librería de Supabase no se cargó");
+  supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+} catch (err) {
+  console.error("Error inicializando Supabase:", err);
+}
 
 const feedEl = document.getElementById("feed");
 const emptyStateEl = document.getElementById("empty-state");
@@ -18,6 +24,14 @@ function showToast(message, type = "info") {
   toast.textContent = message;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
+}
+
+function requireSupabase() {
+  if (!supabase) {
+    showToast("No se pudo conectar con la base de datos. Revisa tu conexión y recarga la página.", "error");
+    return false;
+  }
+  return true;
 }
 
 // ---------------- Utilidades ----------------
@@ -80,6 +94,7 @@ function renderFeed() {
     });
     checkbox.addEventListener("change", async (e) => {
       e.preventDefault();
+      if (!requireSupabase()) { checkbox.checked = !checkbox.checked; return; }
       const newImportance = checkbox.checked ? "high" : "low";
       const { error } = await supabase
         .from("notifications")
@@ -101,6 +116,7 @@ function renderFeed() {
 }
 
 async function loadNotifications() {
+  if (!supabase) return;
   const { data, error } = await supabase
     .from("notifications")
     .select("*")
@@ -115,6 +131,7 @@ async function loadNotifications() {
 }
 
 async function loadSettings() {
+  if (!supabase) return;
   const { data } = await supabase.from("settings").select("*").eq("id", 1).maybeSingle();
   if (data) {
     onlyImportantToggle.checked = data.only_notify_important;
@@ -135,6 +152,7 @@ document.querySelectorAll(".chip").forEach((chip) => {
 });
 
 onlyImportantToggle.addEventListener("change", async () => {
+  if (!requireSupabase()) return;
   await supabase.from("settings").update({ only_notify_important: onlyImportantToggle.checked }).eq("id", 1);
 });
 
@@ -152,6 +170,7 @@ settingsOverlay.addEventListener("click", (e) => {
 
 // ---------------- Gestión de empresas ----------------
 async function loadCompanies() {
+  if (!supabase) return;
   const { data, error } = await supabase.from("companies").select("*").order("name");
   if (error) {
     console.error("Error cargando empresas:", error.message);
@@ -171,6 +190,7 @@ async function loadCompanies() {
   }
   listEl.querySelectorAll(".remove-company").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      if (!requireSupabase()) return;
       const label = btn.closest("li").querySelector("span").textContent;
       const { error } = await supabase.from("companies").delete().eq("id", btn.dataset.id);
       if (error) {
@@ -188,6 +208,7 @@ async function loadCompanies() {
 
 document.getElementById("add-company-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (!requireSupabase()) return;
   const nameInput = document.getElementById("new-company-name");
   const tickerInput = document.getElementById("new-company-ticker");
   const name = nameInput.value.trim();
@@ -294,6 +315,7 @@ async function refreshPushStatus() {
 
 btnEnablePush.addEventListener("click", async () => {
   try {
+    if (!requireSupabase()) return;
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       pushStatusEl.textContent = "Permiso denegado. Actívalo desde los ajustes del navegador.";
@@ -323,6 +345,9 @@ btnEnablePush.addEventListener("click", async () => {
 
 // ---------------- Arranque ----------------
 async function init() {
+  if (!supabase) {
+    showToast("No se pudo cargar la base de datos. Comprueba tu conexión y recarga la página.", "error");
+  }
   if ("serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.register("sw.js");
