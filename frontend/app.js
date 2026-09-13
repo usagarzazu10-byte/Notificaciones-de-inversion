@@ -172,6 +172,10 @@ document.getElementById("btn-settings").addEventListener("click", () => {
   alert("Botón pulsado correctamente (prueba temporal)"); // TODO: quitar tras depurar
   openSettings();
 });
+document.getElementById("btn-debug-settings").addEventListener("click", () => {
+  alert("Botón grande de prueba pulsado");
+  openSettings();
+});
 document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", (e) => {
   if (e.target === settingsOverlay) closeSettings();
