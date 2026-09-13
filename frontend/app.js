@@ -158,14 +158,20 @@ onlyImportantToggle.addEventListener("change", async () => {
 
 // ---------------- Panel de ajustes ----------------
 const settingsOverlay = document.getElementById("settings-overlay");
-document.getElementById("btn-settings").addEventListener("click", () => {
+
+function openSettings() {
   settingsOverlay.hidden = false;
-});
-document.getElementById("btn-close-settings").addEventListener("click", () => {
+  settingsOverlay.style.setProperty("display", "flex", "important");
+}
+function closeSettings() {
   settingsOverlay.hidden = true;
-});
+  settingsOverlay.style.setProperty("display", "none", "important");
+}
+
+document.getElementById("btn-settings").addEventListener("click", openSettings);
+document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", (e) => {
-  if (e.target === settingsOverlay) settingsOverlay.hidden = true;
+  if (e.target === settingsOverlay) closeSettings();
 });
 
 // ---------------- Gestión de empresas ----------------

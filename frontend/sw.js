@@ -1,4 +1,4 @@
-const CACHE_NAME = "invnotif-v3";
+const CACHE_NAME = "invnotif-v4";
 const CORE_ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./config.js", "./companies-data.js", "./vendor/supabase.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
