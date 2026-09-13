@@ -168,7 +168,10 @@ function closeSettings() {
   settingsOverlay.style.setProperty("display", "none", "important");
 }
 
-document.getElementById("btn-settings").addEventListener("click", openSettings);
+document.getElementById("btn-settings").addEventListener("click", () => {
+  alert("Botón pulsado correctamente (prueba temporal)"); // TODO: quitar tras depurar
+  openSettings();
+});
 document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", (e) => {
   if (e.target === settingsOverlay) closeSettings();
