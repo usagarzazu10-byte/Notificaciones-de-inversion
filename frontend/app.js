@@ -169,21 +169,23 @@ function closeSettings() {
 }
 
 document.getElementById("btn-settings").addEventListener("click", () => {
-  alert("Botón pulsado correctamente (prueba temporal)"); // TODO: quitar tras depurar
+  document.getElementById("debug-output").textContent = "Botón pequeño (topbar) pulsado.";
   openSettings();
 });
 document.getElementById("btn-debug-settings").addEventListener("click", () => {
+  const out = document.getElementById("debug-output");
   try {
+    out.textContent = "Boton pulsado. Ejecutando openSettings()...";
     openSettings();
-    alert(
+    out.textContent =
       "openSettings() ejecutado sin errores.\n" +
       "hidden=" + settingsOverlay.hidden + "\n" +
-      "display=" + settingsOverlay.style.display + "\n" +
+      "inline display=" + JSON.stringify(settingsOverlay.style.display) + "\n" +
       "computed display=" + getComputedStyle(settingsOverlay).display + "\n" +
-      "z-index=" + getComputedStyle(settingsOverlay).zIndex
-    );
+      "z-index=" + getComputedStyle(settingsOverlay).zIndex + "\n" +
+      "bounding rect=" + JSON.stringify(settingsOverlay.getBoundingClientRect());
   } catch (err) {
-    alert("ERROR en openSettings: " + err.message);
+    out.textContent = "ERROR: " + err.message + "\n" + err.stack;
   }
 });
 document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
