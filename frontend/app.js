@@ -1,3 +1,9 @@
+function checkpoint(n) {
+  const el = document.getElementById("debug-output");
+  if (el) el.textContent = "CHECKPOINT " + n + " alcanzado, a las " + new Date().toLocaleTimeString();
+}
+checkpoint(1);
+
 const cfg = window.INVNOTIF_CONFIG;
 let supabase = null;
 try {
@@ -6,11 +12,13 @@ try {
 } catch (err) {
   console.error("Error inicializando Supabase:", err);
 }
+checkpoint(2);
 
 const feedEl = document.getElementById("feed");
 const emptyStateEl = document.getElementById("empty-state");
 const lastCheckEl = document.getElementById("last-check");
 const onlyImportantToggle = document.getElementById("only-important-toggle");
+checkpoint(3);
 
 let currentFilter = "all";
 let allNotifications = [];
@@ -157,6 +165,7 @@ onlyImportantToggle.addEventListener("change", async () => {
 });
 
 // ---------------- Panel de ajustes ----------------
+checkpoint(4);
 const settingsOverlay = document.getElementById("settings-overlay");
 
 function openSettings() {
@@ -370,6 +379,7 @@ btnEnablePush.addEventListener("click", async () => {
 
 // ---------------- Arranque ----------------
 async function init() {
+  checkpoint(6);
   if (!supabase) {
     showToast("No se pudo cargar la base de datos. Comprueba tu conexión y recarga la página.", "error");
   }
@@ -381,11 +391,14 @@ async function init() {
       console.error("Error registrando service worker:", err);
     }
   }
+  checkpoint(7);
   await Promise.all([loadCompanies(), loadNotifications(), loadSettings()]);
+  checkpoint(8);
   await refreshPushStatus();
 
   // Refresco periódico del feed mientras la app está abierta
   setInterval(loadNotifications, 60000);
 }
 
+checkpoint(5);
 init();
