@@ -173,8 +173,18 @@ document.getElementById("btn-settings").addEventListener("click", () => {
   openSettings();
 });
 document.getElementById("btn-debug-settings").addEventListener("click", () => {
-  alert("Botón grande de prueba pulsado");
-  openSettings();
+  try {
+    openSettings();
+    alert(
+      "openSettings() ejecutado sin errores.\n" +
+      "hidden=" + settingsOverlay.hidden + "\n" +
+      "display=" + settingsOverlay.style.display + "\n" +
+      "computed display=" + getComputedStyle(settingsOverlay).display + "\n" +
+      "z-index=" + getComputedStyle(settingsOverlay).zIndex
+    );
+  } catch (err) {
+    alert("ERROR en openSettings: " + err.message);
+  }
 });
 document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", (e) => {
